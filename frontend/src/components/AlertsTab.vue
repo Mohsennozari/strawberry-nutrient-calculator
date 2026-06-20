@@ -13,18 +13,18 @@
         <p class="text-sm text-gray-500 mt-1">خلاصه‌ای از وضعیت عناصر، نسبت‌ها و پارامترهای محیطی</p>
       </div>
       <!-- شمارنده وضعیت -->
-      <div v-if="result" class="flex items-center gap-2">
+      <div v-if="effectiveResult" class="flex items-center gap-2">
         <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
           ✅ {{ getHealthyCount }} سالم
         </span>
-        <span v-if="result.alerts && result.alerts.length > 0" class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-          ⚠️ {{ result.alerts.length }} هشدار
+        <span v-if="effectiveResult.alerts && getTotalAlerts > 0" class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+          ⚠️ {{ getTotalAlerts }} هشدار
         </span>
       </div>
     </div>
 
     <!-- ====== حالت خالی ====== -->
-    <div v-if="!result" class="text-center py-16">
+    <div v-if="!effectiveResult" class="text-center py-16">
       <svg class="w-20 h-20 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
@@ -37,43 +37,73 @@
 
       <!-- ====== وضعیت کلی (کارت بزرگ) ====== -->
       <div class="mb-6 p-5 rounded-xl border-2 transition-all duration-300"
-        :class="getOverallClass(result.health_status)">
+        :class="getOverallClass(effectiveResult.health_status)">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div class="flex items-center gap-3">
-            <span class="text-3xl">{{ getOverallIcon(result.health_status) }}</span>
+            <span class="text-3xl">{{ getOverallIcon(effectiveResult.health_status) }}</span>
             <div>
-              <span class="font-bold text-lg block">{{ translateHealth(result.health_status) }}</span>
-              <span class="text-sm text-gray-600">{{ getOverallDescription(result.health_status) }}</span>
+              <span class="font-bold text-lg block">{{ translateHealth(effectiveResult.health_status) }}</span>
+              <span class="text-sm text-gray-600">{{ getOverallDescription(effectiveResult.health_status) }}</span>
             </div>
           </div>
           <span class="px-4 py-2 rounded-full text-sm font-bold"
-            :class="getHealthBadgeClass(result.health_status)">
-            {{ translateHealth(result.health_status) }}
+            :class="getHealthBadgeClass(effectiveResult.health_status)">
+            {{ translateHealth(effectiveResult.health_status) }}
           </span>
         </div>
         <!-- نوار پیشرفت وضعیت -->
         <div class="mt-3 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
           <div class="h-full rounded-full transition-all duration-500"
-            :class="getProgressClass(result.health_status)"
-            :style="{ width: getHealthProgress(result.health_status) + '%' }">
+            :class="getProgressClass(effectiveResult.health_status)"
+            :style="{ width: getHealthProgress(effectiveResult.health_status) + '%' }">
           </div>
         </div>
       </div>
 
       <!-- ====== هشدارهای فعال ====== -->
-      <div v-if="result.alerts && result.alerts.length > 0" class="mb-6">
+      <div v-if="getTotalAlerts > 0" class="mb-6">
         <h3 class="font-bold text-red-700 mb-3 flex items-center gap-2">
           <span class="inline-block w-1.5 h-5 bg-red-500 rounded-full"></span>
-          هشدارهای فعال ({{ result.alerts.length }})
+          هشدارهای فعال ({{ getTotalAlerts }})
         </h3>
-        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <div v-for="(alert, index) in result.alerts" :key="index"
-            class="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 hover:bg-red-100 transition-colors duration-150">
-            <span class="text-red-500 text-xl flex-shrink-0">⚠️</span>
-            <span class="text-sm text-red-700 leading-relaxed">{{ alert }}</span>
+
+        <!-- هشدارهای بحرانی -->
+        <div v-if="effectiveResult.alerts.critical && effectiveResult.alerts.critical.length > 0" class="mb-3">
+          <h4 class="text-sm font-bold text-red-600 mb-2">🔴 بحرانی ({{ effectiveResult.alerts.critical.length }})</h4>
+          <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <div v-for="(alert, index) in effectiveResult.alerts.critical" :key="'critical-' + index"
+              class="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 hover:bg-red-100 transition-colors duration-150">
+              <span class="text-red-500 text-xl flex-shrink-0">🚨</span>
+              <span class="text-sm text-red-700 leading-relaxed">{{ alert.message }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- هشدارهای ملایم -->
+        <div v-if="effectiveResult.alerts.warning && effectiveResult.alerts.warning.length > 0" class="mb-3">
+          <h4 class="text-sm font-bold text-yellow-600 mb-2">🟡 هشدار ({{ effectiveResult.alerts.warning.length }})</h4>
+          <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <div v-for="(alert, index) in effectiveResult.alerts.warning" :key="'warning-' + index"
+              class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3 hover:bg-yellow-100 transition-colors duration-150">
+              <span class="text-yellow-500 text-xl flex-shrink-0">⚠️</span>
+              <span class="text-sm text-yellow-700 leading-relaxed">{{ alert.message }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- اطلاع‌رسانی‌ها -->
+        <div v-if="effectiveResult.alerts.info && effectiveResult.alerts.info.length > 0">
+          <h4 class="text-sm font-bold text-blue-600 mb-2">🔵 اطلاع‌رسانی ({{ effectiveResult.alerts.info.length }})</h4>
+          <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <div v-for="(alert, index) in effectiveResult.alerts.info" :key="'info-' + index"
+              class="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 hover:bg-blue-100 transition-colors duration-150">
+              <span class="text-blue-500 text-xl flex-shrink-0">ℹ️</span>
+              <span class="text-sm text-blue-700 leading-relaxed">{{ alert.message }}</span>
+            </div>
           </div>
         </div>
       </div>
+
       <div v-else class="mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-center">
         <span class="text-green-700 flex items-center justify-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,13 +114,13 @@
       </div>
 
       <!-- ====== وضعیت عناصر ====== -->
-      <div v-if="result.ppm" class="mb-6">
+      <div v-if="effectiveResult.ppm" class="mb-6">
         <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
           <span class="inline-block w-1.5 h-5 bg-blue-500 rounded-full"></span>
           وضعیت عناصر غذایی
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          <div v-for="(value, key) in result.ppm" :key="key"
+          <div v-for="(value, key) in effectiveResult.ppm" :key="key"
             class="p-3 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md"
             :class="getElementStatusClass(key, value)">
             <span class="font-bold text-sm block text-gray-700">{{ key }}</span>
@@ -101,13 +131,13 @@
       </div>
 
       <!-- ====== وضعیت نسبت‌ها ====== -->
-      <div v-if="result.ratios" class="mb-6">
+      <div v-if="effectiveResult.ratios" class="mb-6">
         <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
           <span class="inline-block w-1.5 h-5 bg-purple-500 rounded-full"></span>
           وضعیت نسبت‌های کلیدی
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          <div v-for="(value, key) in result.ratios" :key="key"
+          <div v-for="(value, key) in effectiveResult.ratios" :key="key"
             class="p-3 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md"
             :class="getRatioStatusClass(key, value)">
             <span class="font-bold text-sm block text-gray-700">{{ key.replace('_', ':') }}</span>
@@ -118,13 +148,13 @@
       </div>
 
       <!-- ====== وضعیت EC و pH ====== -->
-      <div v-if="result.ec_ph" class="mb-6">
+      <div v-if="effectiveResult.ec_ph" class="mb-6">
         <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
           <span class="inline-block w-1.5 h-5 bg-yellow-500 rounded-full"></span>
           وضعیت EC و pH
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div v-for="(item, key) in result.ec_ph" :key="key"
+          <div v-for="(item, key) in effectiveResult.ec_ph" :key="key"
             class="p-4 rounded-xl border-2 text-center transition-all duration-200 hover:shadow-md"
             :class="getEcPhStatusClass(item.status)">
             <span class="font-bold text-sm block text-gray-700">{{ key }}</span>
@@ -138,8 +168,20 @@
         </div>
       </div>
 
+      <!-- ====== پیش‌بینی وزن میوه ====== -->
+      <div v-if="effectiveResult.fruit_weight_prediction" class="mb-6">
+        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+          <span class="inline-block w-1.5 h-5 bg-pink-500 rounded-full"></span>
+          پیش‌بینی وزن میوه
+        </h3>
+        <div class="p-4 bg-pink-50 rounded-xl border-2 border-pink-200 text-center">
+          <span class="text-3xl font-bold text-pink-700">{{ effectiveResult.fruit_weight_prediction }} گرم</span>
+          <p class="text-xs text-gray-500 mt-1">بر اساس مدل غیرخطی Frontiers 2024</p>
+        </div>
+      </div>
+
       <!-- ====== توصیه‌ها ====== -->
-      <div v-if="result.recommendations && result.recommendations.length > 0"
+      <div v-if="effectiveResult.recommendations && effectiveResult.recommendations.length > 0"
         class="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
         <h3 class="font-bold text-blue-800 mb-2 flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,13 +189,40 @@
           </svg>
           توصیه‌ها
         </h3>
-        <ul class="space-y-1.5">
-          <li v-for="rec in result.recommendations" :key="rec"
-            class="text-sm text-blue-700 flex items-start gap-2">
-            <span class="text-blue-400">▸</span>
-            {{ rec }}
-          </li>
-        </ul>
+        <div class="space-y-2">
+          <div v-for="(rec, index) in effectiveResult.recommendations" :key="index"
+            class="p-3 bg-white rounded-lg border border-blue-100">
+            <div class="flex items-start gap-3">
+              <span class="text-blue-500 text-lg">💡</span>
+              <div>
+                <p class="text-sm font-bold text-blue-800">{{ rec.action }}</p>
+                <p class="text-sm text-blue-700">{{ rec.detail }}</p>
+                <p class="text-xs text-gray-500 mt-1">🔧 {{ rec.method }}</p>
+                <span class="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
+                  :class="rec.priority === 'high' ? 'bg-red-100 text-red-700' : rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'">
+                  {{ rec.priority === 'high' ? 'اولویت بالا' : rec.priority === 'medium' ? 'اولویت متوسط' : 'اطلاع‌رسانی' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== منابع علمی ====== -->
+      <div v-if="effectiveResult.nutrient_sources" class="mt-6 pt-4 border-t border-gray-200">
+        <h3 class="font-bold text-gray-700 mb-2 flex items-center gap-2">
+          <span class="inline-block w-1.5 h-5 bg-gray-500 rounded-full"></span>
+          منابع علمی
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div v-for="(source, element) in effectiveResult.nutrient_sources" :key="element"
+            class="text-xs text-gray-600 p-2 bg-gray-50 rounded-lg">
+            <span class="font-bold">{{ element }}</span>: {{ source.value }} ppm
+            <span class="text-gray-400">({{ source.range[0] }} - {{ source.range[1] }})</span>
+            <br>
+            <span class="text-gray-400">{{ source.source }}</span>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -170,9 +239,44 @@ export default {
       default: null
     }
   },
+  // واکنش به تغییرات prop
+  watch: {
+    result: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          console.log('📊 AlertsTab دریافت داده:', newVal)
+        }
+      }
+    }
+  },
+  // بازیابی از localStorage در صورت نبود prop
+  data() {
+    return {
+      localResult: null
+    }
+  },
+  mounted() {
+    if (!this.result) {
+      const saved = localStorage.getItem('strawberry_result')
+      if (saved) {
+        try {
+          this.localResult = JSON.parse(saved)
+          console.log('📊 AlertsTab بازیابی از localStorage:', this.localResult)
+        } catch (e) {
+          console.error('خطا در بازیابی:', e)
+        }
+      }
+    }
+  },
   computed: {
+    // استفاده از prop یا داده محلی
+    effectiveResult() {
+      return this.result || this.localResult
+    },
     getHealthyCount() {
-      if (!this.result || !this.result.ppm) return 0
+      const res = this.effectiveResult
+      if (!res || !res.ppm) return 0
       const ranges = {
         'N': {min: 156, max: 172},
         'P': {min: 54, max: 63},
@@ -189,17 +293,24 @@ export default {
         'Cl': {min: 0.5, max: 1.5}
       }
       let healthy = 0
-      for (const [key, value] of Object.entries(this.result.ppm)) {
+      for (const [key, value] of Object.entries(res.ppm)) {
         const r = ranges[key]
         if (r && value >= r.min && value <= r.max) healthy++
       }
       return healthy
+    },
+    getTotalAlerts() {
+      const res = this.effectiveResult
+      if (!res || !res.alerts) return 0
+      return (res.alerts.critical?.length || 0) +
+             (res.alerts.warning?.length || 0) +
+             (res.alerts.info?.length || 0)
     }
   },
   methods: {
     // ========== ترجمه‌ها ==========
     translateHealth(status) {
-      const map = { 'Excellent': 'عالی', 'Good': 'خوب', 'Needs Attention': 'نیاز به توجه', 'Critical': 'بحرانی' }
+      const map = { 'Excellent': 'عالی', 'Good': 'خوب', 'Needs Attention': 'نیاز به توجه', 'Critical': 'بحرانی', 'Attention Required': 'نیاز به اقدام' }
       return map[status] || status
     },
     translateStatus(status) {
@@ -213,12 +324,13 @@ export default {
         'Excellent': 'border-green-300 bg-green-50/70',
         'Good': 'border-blue-300 bg-blue-50/70',
         'Needs Attention': 'border-yellow-300 bg-yellow-50/70',
+        'Attention Required': 'border-orange-300 bg-orange-50/70',
         'Critical': 'border-red-300 bg-red-50/70'
       }
       return map[status] || 'border-gray-300 bg-gray-50/70'
     },
     getOverallIcon(status) {
-      const map = { 'Excellent': '✅', 'Good': '👍', 'Needs Attention': '⚠️', 'Critical': '🚨' }
+      const map = { 'Excellent': '✅', 'Good': '👍', 'Needs Attention': '⚠️', 'Attention Required': '⚡', 'Critical': '🚨' }
       return map[status] || '📊'
     },
     getHealthBadgeClass(status) {
@@ -226,6 +338,7 @@ export default {
         'Excellent': 'bg-green-100 text-green-700',
         'Good': 'bg-blue-100 text-blue-700',
         'Needs Attention': 'bg-yellow-100 text-yellow-700',
+        'Attention Required': 'bg-orange-100 text-orange-700',
         'Critical': 'bg-red-100 text-red-700'
       }
       return map[status] || 'bg-gray-100 text-gray-700'
@@ -235,6 +348,7 @@ export default {
         'Excellent': 'همه چیز در وضعیت مطلوب است. ادامه دهید.',
         'Good': 'وضعیت خوب است. چند مورد نیاز به پایش دارد.',
         'Needs Attention': 'چندین مورد نیاز به توجه و اقدام اصلاحی دارند.',
+        'Attention Required': 'وضعیت نیاز به اقدام فوری دارد.',
         'Critical': 'وضعیت بحرانی! اقدام فوری لازم است.'
       }
       return map[status] || 'وضعیت نامشخص'
@@ -244,12 +358,13 @@ export default {
         'Excellent': 'bg-green-500',
         'Good': 'bg-blue-500',
         'Needs Attention': 'bg-yellow-500',
+        'Attention Required': 'bg-orange-500',
         'Critical': 'bg-red-500'
       }
       return map[status] || 'bg-gray-500'
     },
     getHealthProgress(status) {
-      const map = { 'Excellent': 100, 'Good': 75, 'Needs Attention': 45, 'Critical': 20 }
+      const map = { 'Excellent': 100, 'Good': 75, 'Needs Attention': 45, 'Attention Required': 30, 'Critical': 15 }
       return map[status] || 50
     },
 

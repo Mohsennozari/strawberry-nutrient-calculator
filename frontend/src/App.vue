@@ -28,8 +28,14 @@
 
         <!-- محتوای تب -->
         <div class="p-6 bg-white">
-          <CalculatorTab v-if="activeTab === 'calculator'" />
-          <AlertsTab v-if="activeTab === 'alerts'" :result="sharedResult" />
+          <CalculatorTab
+            v-if="activeTab === 'calculator'"
+            @result-updated="handleResultUpdated"
+          />
+          <AlertsTab
+            v-if="activeTab === 'alerts'"
+            :result="sharedResult"
+          />
           <HelpTab v-if="activeTab === 'help'" />
           <ReferencesTab v-if="activeTab === 'references'" />
         </div>
@@ -81,14 +87,22 @@ export default {
       ]
     }
   },
-  mounted() {
-    this.$root.$on('updateResult', (data) => {
-      this.sharedResult = data
-    })
-  },
   methods: {
     handleResultUpdated(data) {
       this.sharedResult = data
+      // ذخیره در localStorage برای ماندگاری
+      localStorage.setItem('strawberry_result', JSON.stringify(data))
+    }
+  },
+  mounted() {
+    // بازیابی داده از localStorage در صورت موجود بودن
+    const saved = localStorage.getItem('strawberry_result')
+    if (saved) {
+      try {
+        this.sharedResult = JSON.parse(saved)
+      } catch (e) {
+        console.error('خطا در بازیابی داده:', e)
+      }
     }
   }
 }
@@ -101,7 +115,6 @@ export default {
   font-family: 'Vazir', 'Tahoma', sans-serif;
 }
 
-/* انیمیشن‌های نرم برای تعویض تب */
 button {
   position: relative;
   overflow: hidden;
@@ -123,16 +136,10 @@ button:hover::after {
   width: 80%;
 }
 
-button.active-tab::after {
-  width: 100%;
-}
-
-/* بهینه‌سازی برای نمایش در موبایل */
 @media (max-width: 640px) {
   .p-6 {
     padding: 1rem;
   }
-
   .px-8 {
     padding-left: 1rem;
     padding-right: 1rem;

@@ -1,0 +1,36 @@
+2026-06-20 19:19:02,278 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-20 19:19:02,279 - INFO - [33mPress CTRL+C to quit[0m
+2026-06-20 19:19:02,285 - INFO -  * Restarting with stat
+2026-06-20 19:19:03,039 - WARNING -  * Debugger is active!
+2026-06-20 19:19:03,052 - INFO -  * Debugger PIN: 141-495-806
+2026-06-21 07:31:07,208 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-21 07:31:07,209 - INFO - [33mPress CTRL+C to quit[0m
+2026-06-21 07:31:07,215 - INFO -  * Restarting with stat
+2026-06-21 07:31:08,021 - WARNING -  * Debugger is active!
+2026-06-21 07:31:08,038 - INFO -  * Debugger PIN: 141-495-806
+2026-06-21 07:35:10,543 - INFO - 127.0.0.1 - - [21/Jun/2026 07:35:10] "OPTIONS /calculate HTTP/1.1" 200 -
+2026-06-21 07:35:10,547 - INFO - Calculate request from 127.0.0.1: {'crown_diameter': 15.5, 'plant_height': 25, 'petiole_length': 15, 'leaf_length': 7, 'leaf_width': 5.5, 'fruit_size': 0, 'age_days': 84, 'fruits_per_plant': 6, 'temp_c': 26, 'weather': 'sunny', 'ec': 1.8, 'ph': 6}
+2026-06-21 07:35:10,744 - INFO - 127.0.0.1 - - [21/Jun/2026 07:35:10] "[31m[1mPOST /calculate HTTP/1.1[0m" 400 -
+2026-06-21 07:35:33,557 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-21 07:35:33,558 - INFO - [33mPress CTRL+C to quit[0m
+2026-06-21 07:35:33,564 - INFO -  * Restarting with stat
+2026-06-21 07:35:34,438 - WARNING -  * Debugger is active!
+2026-06-21 07:35:34,447 - INFO -  * Debugger PIN: 141-495-806
+2026-06-21 07:35:57,171 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-21 07:35:57,172 - INFO - [33mPress CTRL+C to quit[0m
+2026-06-21 07:35:57,178 - INFO -  * Restarting with stat
+2026-06-21 07:35:57,873 - WARNING -  * Debugger is active!
+2026-06-21 07:35:57,885 - INFO -  * Debugger PIN: 141-495-806
+2026-06-21 07:45:26,257 - INFO - 127.0.0.1 - - [21/Jun/2026 07:45:26] "OPTIONS /calculate HTTP/1.1" 200 -
+2026-06-21 07:45:26,270 - INFO - Calculate request from 127.0.0.1: {'crown_diameter': 15.5, 'plant_height': 25, 'petiole_length': 15, 'leaf_length': 7, 'leaf_width': 5.5, 'fruit_size': 0, 'age_days': 84, 'fruits_per_plant': 6, 'temp_c': 26, 'weather': 'sunny', 'ec': 1.8, 'ph': 6}
+2026-06-21 07:45:26,309 - INFO - 127.0.0.1 - - [21/Jun/2026 07:45:26] "[31m[1mPOST /calculate HTTP/1.1[0m" 400 -
+2026-06-21 07:51:34,624 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2026-06-21 07:51:34,625 - INFO - [33mPress CTRL+C to quit[0m
+2026-06-21 07:51:34,631 - INFO -  * Restarting with stat
+2026-06-21 07:51:35,399 - WARNING -  * Debugger is active!
+2026-06-21 07:51:35,411 - INFO -  * Debugger PIN: 141-495-806

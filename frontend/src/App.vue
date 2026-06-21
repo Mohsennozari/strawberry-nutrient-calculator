@@ -28,7 +28,7 @@
 
         <!-- محتوای تب -->
         <div class="p-6 bg-white">
-          <CalculatorTab v-if="activeTab === 'calculator'" />
+          <CalculatorTab v-if="activeTab === 'calculator'" @result-updated="handleResultUpdated" />
           <AlertsTab v-if="activeTab === 'alerts'" :result="sharedResult" />
           <HelpTab v-if="activeTab === 'help'" />
           <ReferencesTab v-if="activeTab === 'references'" />
@@ -50,9 +50,6 @@ import AlertsTab from './components/AlertsTab.vue'
 import HelpTab from './components/HelpTab.vue'
 import ReferencesTab from './components/ReferencesTab.vue'
 
-// ============================================================
-// Import icons from centralized file
-// ============================================================
 import {
   IconLogo,
   IconCalculator,
@@ -81,11 +78,6 @@ export default {
       ]
     }
   },
-  mounted() {
-    this.$root.$on('updateResult', (data) => {
-      this.sharedResult = data
-    })
-  },
   methods: {
     handleResultUpdated(data) {
       this.sharedResult = data
@@ -101,7 +93,6 @@ export default {
   font-family: 'Vazir', 'Tahoma', sans-serif;
 }
 
-/* انیمیشن‌های نرم برای تعویض تب */
 button {
   position: relative;
   overflow: hidden;
@@ -127,7 +118,6 @@ button.active-tab::after {
   width: 100%;
 }
 
-/* بهینه‌سازی برای نمایش در موبایل */
 @media (max-width: 640px) {
   .p-6 {
     padding: 1rem;

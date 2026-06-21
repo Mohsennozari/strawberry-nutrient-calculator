@@ -9,6 +9,7 @@ import os
 import sys
 import subprocess
 import shutil
+import platform
 from datetime import datetime
 from pathlib import Path
 
@@ -20,90 +21,93 @@ FRONTEND_DIR = PROJECT_ROOT / "frontend"
 class ProjectManager:
     def __init__(self):
         self.processes = []
+        self.is_windows = platform.system() == 'Windows'
 
     def clear_screen(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
+        os.system('cls' if self.is_windows else 'clear')
 
     def print_header(self):
         self.clear_screen()
         print("=" * 60)
-        print("  🍓 Strawberry Nutrient System - Manager")
+        print("  \ud83c\udf53 Strawberry Nutrient System - Manager")
         print("=" * 60)
-        print(f"  📁 {PROJECT_ROOT}")
-        print(f"  📅 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  \ud83d\udcc1 {PROJECT_ROOT}")
+        print(f"  \ud83d\udcc5 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  \ud83d\udcbb {platform.system()} ({platform.machine()})")
         print("=" * 60)
 
     def print_menu(self):
-        print("\n📋 Menu:")
-        print("  ─────────────────────────────────────")
-        print("  1. 🚀 Start Backend + Frontend")
-        print("  2. 🛑 Stop all services")
-        print("  3. 📦 Backup important files")
-        print("  4. 📊 Show status")
-        print("  5. 🧹 Clear cache")
-        print("  6. 📝 Install dependencies")
-        print("  0. ❌ Exit")
-        print("  ─────────────────────────────────────")
+        print("\n\ud83d\udccb Menu:")
+        print("  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
+        print("  1. \ud83d\ude80 Start Backend + Frontend")
+        print("  2. \ud83d\uded1 Stop all services")
+        print("  3. \ud83d\udce6 Backup important files")
+        print("  4. \ud83d\udcca Show status")
+        print("  5. \ud83e\uddf9 Clear cache")
+        print("  6. \ud83d\udcdd Install dependencies")
+        print("  0. \u274c Exit")
+        print("  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
 
-    # ============================================================
-    # 1. RUN SERVICES
-    # ============================================================
+    def _start_process(self, cmd, cwd):
+        if self.is_windows:
+            return subprocess.Popen(cmd, cwd=cwd, shell=True,
+                                    creationflags=subprocess.CREATE_NEW_CONSOLE)
+        else:
+            return subprocess.Popen(cmd, cwd=cwd, shell=True,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL,
+                                    start_new_session=True)
+
     def run_services(self):
         self.print_header()
-        print("\n🚀 Starting services...")
+        print("\n\ud83d\ude80 Starting services...")
 
         try:
-            # Backend
-            print("  ⚙️  Backend (Flask)...")
-            p1 = subprocess.Popen(
-                "start cmd /k python app.py",
-                cwd=BACKEND_DIR,
-                shell=True
-            )
+            print("  \u2699\ufe0f  Backend (Flask)...")
+            if self.is_windows:
+                p1 = self._start_process("start cmd /k python app.py", BACKEND_DIR)
+            else:
+                p1 = self._start_process(f"{sys.executable} app.py", BACKEND_DIR)
             self.processes.append(p1)
-            print("  ✅ Backend started!")
+            print("  \u2705 Backend started!")
 
-            # Frontend
-            print("  ⚙️  Frontend (Vue.js)...")
-            p2 = subprocess.Popen(
-                "start cmd /k npm run dev",
-                cwd=FRONTEND_DIR,
-                shell=True
-            )
+            print("  \u2699\ufe0f  Frontend (Vue.js)...")
+            if self.is_windows:
+                p2 = self._start_process("start cmd /k npm run dev", FRONTEND_DIR)
+            else:
+                p2 = self._start_process("npm run dev", FRONTEND_DIR)
             self.processes.append(p2)
-            print("  ✅ Frontend started!")
+            print("  \u2705 Frontend started!")
 
         except Exception as e:
-            print(f"  ❌ Error: {e}")
+            print(f"  \u274c Error: {e}")
 
-        print("\n✅ Services started!")
-        print("  🔗 Backend:  http://127.0.0.1:5000")
-        print("  🔗 Frontend: http://localhost:5173/")
-        print("\n⚠️  To stop services, select option 2.")
+        print("\n\u2705 Services started!")
+        print("  \ud83d\udd17 Backend:  http://127.0.0.1:5000")
+        print("  \ud83d\udd17 Frontend: http://localhost:5173/")
+        print("\n\u26a0\ufe0f  To stop services, select option 2.")
 
-        input("\n🔹 Press Enter to return...")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # 2. STOP SERVICES
-    # ============================================================
     def stop_services(self):
         self.print_header()
-        print("\n🛑 Stopping services...")
+        print("\n\ud83d\uded1 Stopping services...")
         for p in self.processes:
             try:
                 p.terminate()
-            except:
-                pass
+                p.wait(timeout=5)
+            except Exception:
+                try:
+                    p.kill()
+                except Exception:
+                    pass
         self.processes = []
-        print("✅ Stopped.")
-        input("\n🔹 Press Enter to return...")
+        print("\u2705 Stopped.")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # 3. BACKUP
-    # ============================================================
     def create_backup(self):
         self.print_header()
-        print("\n📦 Creating backup...")
+        print("\n\ud83d\udce6 Creating backup...")
 
         backup_dir = PROJECT_ROOT / "backups"
         backup_dir.mkdir(exist_ok=True)
@@ -126,53 +130,49 @@ class ProjectManager:
             ]
         }
 
-        content = ["# 📦 Backup", f"\n**Date:** {timestamp}", f"**Path:** {PROJECT_ROOT}", "\n" + "=" * 60]
+        content = ["# \ud83d\udce6 Backup", f"\n**Date:** {timestamp}", f"**Path:** {PROJECT_ROOT}", "\n" + "=" * 60]
 
         for category, file_list in files.items():
-            content.append(f"\n## 📁 {category}\n")
+            content.append(f"\n## \ud83d\udcc1 {category}\n")
             for fname in file_list:
                 full_path = (BACKEND_DIR if category == "Backend" else FRONTEND_DIR) / fname
                 if full_path.exists():
                     try:
                         with open(full_path, 'r', encoding='utf-8') as f:
-                            content.append(f"\n### `{fname}`\n```python" if fname.endswith('.py') else f"\n### `{fname}`\n```")
+                            ext = full_path.suffix
+                            lang = 'python' if ext == '.py' else 'javascript' if ext in ('.js', '.vue') else ''
+                            content.append(f"\n### `{fname}`\n```{lang}")
                             content.append(f.read())
                             content.append("```\n")
-                            print(f"  ✅ {category}/{fname}")
-                    except:
-                        print(f"  ❌ {category}/{fname}")
+                            print(f"  \u2705 {category}/{fname}")
+                    except Exception:
+                        print(f"  \u274c {category}/{fname}")
                 else:
-                    print(f"  ⚠️ {category}/{fname} not found")
+                    print(f"  \u26a0\ufe0f {category}/{fname} not found")
 
         with open(backup_file, 'w', encoding='utf-8') as f:
             f.write("\n".join(content))
 
-        print(f"\n✅ Backup: {backup_file}")
-        input("\n🔹 Press Enter to return...")
+        print(f"\n\u2705 Backup: {backup_file}")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # 4. STATUS
-    # ============================================================
     def show_status(self):
         self.print_header()
-        print("\n📊 Status:")
+        print("\n\ud83d\udcca Status:")
 
         if not self.processes:
-            print("  ℹ️  No services running.")
+            print("  \u2139\ufe0f  No services running.")
         else:
             for i, p in enumerate(self.processes):
                 status = "Running" if p.poll() is None else "Stopped"
-                icon = "🟢" if p.poll() is None else "🔴"
+                icon = "\ud83d\udfe2" if p.poll() is None else "\ud83d\udd34"
                 print(f"  {icon} Service {i+1}: {status}")
 
-        input("\n🔹 Press Enter to return...")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # 5. CLEAR CACHE
-    # ============================================================
     def clear_cache(self):
         self.print_header()
-        print("\n🧹 Clearing cache...")
+        print("\n\ud83e\uddf9 Clearing cache...")
 
         dirs = [
             FRONTEND_DIR / "node_modules/.cache",
@@ -184,40 +184,33 @@ class ProjectManager:
         for d in dirs:
             if d.exists():
                 shutil.rmtree(d)
-                print(f"  ✅ {d.name} removed")
+                print(f"  \u2705 {d.name} removed")
 
-        print("\n✅ Done.")
-        input("\n🔹 Press Enter to return...")
+        print("\n\u2705 Done.")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # 6. INSTALL DEPENDENCIES
-    # ============================================================
     def install_dependencies(self):
         self.print_header()
-        print("\n📦 Installing dependencies...")
+        print("\n\ud83d\udce6 Installing dependencies...")
 
-        print("\n  ⚙️  Backend...")
+        print("\n  \u2699\ufe0f  Backend...")
         subprocess.run(
-            f'"{sys.executable}" -m pip install -r requirements.txt',
-            cwd=BACKEND_DIR,
-            shell=True
+            [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
+            cwd=BACKEND_DIR
         )
 
-        print("\n  ⚙️  Frontend...")
-        subprocess.run("npm install", cwd=FRONTEND_DIR, shell=True)
+        print("\n  \u2699\ufe0f  Frontend...")
+        subprocess.run(["npm", "install"], cwd=FRONTEND_DIR)
 
-        print("\n✅ Done.")
-        input("\n🔹 Press Enter to return...")
+        print("\n\u2705 Done.")
+        input("\n\ud83d\udd39 Press Enter to return...")
 
-    # ============================================================
-    # MAIN
-    # ============================================================
     def run(self):
         while True:
             self.print_header()
             self.print_menu()
 
-            choice = input("\n🔹 Select option: ").strip()
+            choice = input("\n\ud83d\udd39 Select option: ").strip()
 
             if choice == '1':
                 self.run_services()
@@ -232,20 +225,20 @@ class ProjectManager:
             elif choice == '6':
                 self.install_dependencies()
             elif choice == '0':
-                print("\n👋 Goodbye!")
+                print("\n\ud83d\udc4b Goodbye!")
                 self.stop_services()
                 sys.exit(0)
             else:
-                print("\n❌ Invalid option.")
-                input("\n🔹 Press Enter...")
+                print("\n\u274c Invalid option.")
+                input("\n\ud83d\udd39 Press Enter...")
 
 
 if __name__ == "__main__":
     try:
         ProjectManager().run()
     except KeyboardInterrupt:
-        print("\n\n👋 Goodbye!")
+        print("\n\n\ud83d\udc4b Goodbye!")
         sys.exit(0)
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\n\u274c Error: {e}")
         sys.exit(1)

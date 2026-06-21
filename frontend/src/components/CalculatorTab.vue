@@ -26,6 +26,7 @@ import EmptyState from './calculator/EmptyState.vue'
 export default {
   name: 'CalculatorTab',
   components: { CalculatorForm, ResultTable, EmptyState },
+  emits: ['result-updated'],
   data() {
     return {
       form: {
@@ -51,11 +52,18 @@ export default {
       this.loading = true
       try {
         const data = await calculateNutrients(formData)
+        if (data.error) {
+          alert(`\u274c خطا: ${data.error}`)
+          return
+        }
         this.result = data
         this.$emit('result-updated', data)
-        this.$root.$emit('updateResult', data)
       } catch (error) {
-        alert('❌ خطا! سرور Flask رو روشن کن.')
+        if (error.response && error.response.data && error.response.data.error) {
+          alert(`\u274c ${error.response.data.error}`)
+        } else {
+          alert('\u274c خطا! سرور Flask رو روشن کن.')
+        }
         console.error(error)
       } finally {
         this.loading = false
@@ -68,14 +76,12 @@ export default {
       range.selectNode(table)
       window.getSelection().removeAllRanges()
       window.getSelection().addRange(range)
-      try { document.execCommand('copy'); alert('✅ جدول کپی شد!') } catch (e) { alert('❌ کپی ناموفق.') }
+      try { document.execCommand('copy'); alert('\u2705 جدول کپی شد!') } catch (e) { alert('\u274c کپی ناموفق.') }
       window.getSelection().removeAllRanges()
     },
     downloadCSV() {
       if (!this.result) return
-      // ... کد CSV مانند قبل ...
       const rows = [['دسته', 'عنصر', 'مقدار (ppm)', 'وضعیت', 'محدوده بهینه (ppm)', 'نسبت', 'مقدار نسبت']]
-      // (کد CSV کامل از نسخه قبلی)
       const csvContent = rows.map(row => row.join(',')).join('\n')
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')

@@ -2,11 +2,16 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from physiology_engine import PhysiologyEngine
+from auth import auth_bp, token_required
+from database import init_db
 
 app = Flask(__name__)
 
 ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')
 CORS(app, origins=ALLOWED_ORIGINS)
+
+init_db()
+app.register_blueprint(auth_bp)
 
 engine = PhysiologyEngine()
 
@@ -42,6 +47,7 @@ def home():
 
 
 @app.route('/calculate', methods=['POST'])
+@token_required
 def calculate():
     data = request.get_json(silent=True)
 

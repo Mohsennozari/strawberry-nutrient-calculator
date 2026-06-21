@@ -1,12 +1,23 @@
 <template>
-  <div dir="rtl" class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4 font-vazir flex items-center justify-center">
+  <AuthView v-if="!user" @authenticated="handleAuthenticated" />
+
+  <div v-else dir="rtl" class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4 font-vazir flex items-center justify-center">
     <div class="max-w-6xl w-full mx-auto">
 
       <!-- کارت اصلی -->
       <div class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-green-100">
 
         <!-- هدر داخل کارت با لوگو -->
-        <div class="bg-gradient-to-r from-green-700 to-emerald-600 px-8 py-6 text-center">
+        <div class="relative bg-gradient-to-r from-green-700 to-emerald-600 px-8 py-6 text-center">
+          <div class="absolute top-4 left-4 flex items-center gap-3">
+            <span class="text-green-50 text-sm hidden sm:inline">سلام، {{ user.username }}</span>
+            <button
+              @click="handleLogout"
+              class="bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-lg transition"
+            >
+              خروج
+            </button>
+          </div>
           <div class="flex justify-center mb-3" v-html="IconLogo"></div>
           <h1 class="text-3xl font-bold text-white">سیستم تغذیه توت‌فرنگی</h1>
           <p class="text-green-100 mt-2 text-sm md:text-base">ماشین‌حساب تغذیه بر اساس فیزیولوژی برای توت‌فرنگی‌های هیدروپونیک</p>
@@ -49,6 +60,8 @@ import CalculatorTab from './components/CalculatorTab.vue'
 import AlertsTab from './components/AlertsTab.vue'
 import HelpTab from './components/HelpTab.vue'
 import ReferencesTab from './components/ReferencesTab.vue'
+import AuthView from './components/auth/AuthView.vue'
+import { getUser, clearAuth } from './services/auth'
 
 import {
   IconLogo,
@@ -64,10 +77,12 @@ export default {
     CalculatorTab,
     AlertsTab,
     HelpTab,
-    ReferencesTab
+    ReferencesTab,
+    AuthView
   },
   data() {
     return {
+      user: getUser(),
       activeTab: 'calculator',
       sharedResult: null,
       tabs: [
@@ -78,9 +93,25 @@ export default {
       ]
     }
   },
+  mounted() {
+    window.addEventListener('auth:unauthorized', this.handleLogout)
+  },
+  beforeUnmount() {
+    window.removeEventListener('auth:unauthorized', this.handleLogout)
+  },
   methods: {
     handleResultUpdated(data) {
       this.sharedResult = data
+    },
+    handleAuthenticated(user) {
+      this.user = user
+      this.activeTab = 'calculator'
+      this.sharedResult = null
+    },
+    handleLogout() {
+      clearAuth()
+      this.user = null
+      this.sharedResult = null
     }
   }
 }

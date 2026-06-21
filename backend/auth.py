@@ -1,5 +1,6 @@
 import os
 import re
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -92,11 +93,14 @@ def register():
         if existing is not None:
             return jsonify({'error': 'نام کاربری یا ایمیل قبلاً ثبت شده است'}), 409
 
-        cursor = conn.execute(
-            'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-            (username, email, generate_password_hash(password)),
-        )
-        conn.commit()
+        try:
+            cursor = conn.execute(
+                'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                (username, email, generate_password_hash(password)),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            return jsonify({'error': 'نام کاربری یا ایمیل قبلاً ثبت شده است'}), 409
         user = conn.execute(
             'SELECT * FROM users WHERE id = ?', (cursor.lastrowid,)
         ).fetchone()

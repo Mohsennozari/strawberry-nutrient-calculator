@@ -1,8 +1,5 @@
 class PhysiologyEngine:
     def __init__(self):
-        # ============================================================
-        # PPM پایه برای ۱۳ عنصر بر اساس مرحله رشد
-        # ============================================================
         self.base_ppm = {
             'vegetative': {
                 'N': 160, 'P': 55, 'K': 420, 'Ca': 280, 'Mg': 60,
@@ -26,9 +23,6 @@ class PhysiologyEngine:
             }
         }
 
-        # ============================================================
-        # محدوده‌های بهینه برای ۱۳ عنصر
-        # ============================================================
         self.optimal_ranges = {
             'N': {'min': 156, 'max': 172},
             'P': {'min': 54, 'max': 63},
@@ -45,9 +39,6 @@ class PhysiologyEngine:
             'Cl': {'min': 0.5, 'max': 1.5}
         }
 
-        # ============================================================
-        # نسبت‌های کلیدی عناصر
-        # ============================================================
         self.optimal_ratios = {
             'K_Ca': {'min': 1.2, 'max': 1.4},
             'K_Mg': {'min': 3.0, 'max': 4.0},
@@ -58,47 +49,33 @@ class PhysiologyEngine:
             'B_Ca': {'min': 0.001, 'max': 0.002}
         }
 
-        # ============================================================
-        # محدوده‌های مجاز EC و pH
-        # ============================================================
         self.optimal_ec_ph = {
             'EC': {'min': 1.0, 'max': 2.5, 'optimal_min': 1.5, 'optimal_max': 2.0},
             'pH': {'min': 5.5, 'max': 6.5, 'optimal_min': 5.8, 'optimal_max': 6.2}
         }
 
+    def _safe_float(self, data, key, default=0):
+        try:
+            return float(data.get(key, default))
+        except (TypeError, ValueError):
+            return default
+
     def calculate(self, data):
-        # 1. تشخیص مرحله رشد
+        if not isinstance(data, dict):
+            raise ValueError('ورودی باید یک دیکشنری باشد')
+
         stage = self.determine_stage(data)
-
-        # 2. دریافت PPM پایه برای ۱۳ عنصر
         ppm = self.base_ppm[stage].copy()
-
-        # 3. اعمال اصلاحات
         ppm = self.apply_corrections(ppm, data)
-
-        # 4. محاسبه همه نسبت‌ها
         ratios = self.calculate_ratios(ppm)
-
-        # 5. پیش‌بینی وزن میوه
-        fruit_weight = self.predict_fruit_weight(data.get('fruit_size', 0))
-
-        # 6. تولید هشدارها
+        fruit_weight = self.predict_fruit_weight(self._safe_float(data, 'fruit_size', 0))
         alerts = self.generate_alerts(ppm, data, ratios)
-
-        # 7. تولید توصیه‌ها
         recommendations = self.generate_recommendations(ppm, data, alerts)
-
-        # 8. وضعیت سلامت کلی
         health_status = self.determine_health_status(alerts)
-
-        # 9. خروجی EC و pH
         ec_ph = self.get_ec_ph_status(data)
 
-        # ============================================================
-        # برگرداندن خروجی کامل با stage
-        # ============================================================
         return {
-            'stage': stage,  # <-- این خط مهم است
+            'stage': stage,
             'ppm': {k: round(v, 2) for k, v in ppm.items()},
             'ratios': {k: round(v, 2) for k, v in ratios.items()},
             'ec_ph': ec_ph,
@@ -109,9 +86,8 @@ class PhysiologyEngine:
         }
 
     def determine_stage(self, data):
-        """تشخیص مرحله رشد بر اساس قطر طوقه و سن"""
-        crown = data.get('crown_diameter', 0)
-        age = data.get('age_days', 0)
+        crown = self._safe_float(data, 'crown_diameter', 0)
+        age = self._safe_float(data, 'age_days', 0)
 
         if crown < 12 or age < 30:
             return 'vegetative'
@@ -123,10 +99,9 @@ class PhysiologyEngine:
             return 'maturity'
 
     def apply_corrections(self, ppm, data):
-        """اعمال ضرایب اصلاحی"""
         corrected = ppm.copy()
 
-        temp = data.get('temp_c', 25)
+        temp = self._safe_float(data, 'temp_c', 25)
         if temp > 28:
             corrected['Ca'] *= 1.10
             corrected['K'] *= 1.05
@@ -134,14 +109,13 @@ class PhysiologyEngine:
         if data.get('weather') == 'cloudy':
             corrected['N'] *= 0.85
 
-        if data.get('fruits_per_plant', 0) > 6:
+        if self._safe_float(data, 'fruits_per_plant', 0) > 6:
             corrected['K'] *= 1.10
             corrected['Ca'] *= 1.10
 
         return corrected
 
     def calculate_ratios(self, ppm):
-        """محاسبه ۷ نسبت کلیدی"""
         return {
             'K_Ca': ppm['K'] / ppm['Ca'] if ppm['Ca'] > 0 else 0,
             'K_Mg': ppm['K'] / ppm['Mg'] if ppm['Mg'] > 0 else 0,
@@ -153,15 +127,13 @@ class PhysiologyEngine:
         }
 
     def predict_fruit_weight(self, fruit_size_cm2):
-        """پیش‌بینی وزن میوه (R² = 0.92)"""
         if fruit_size_cm2 <= 0:
             return 0
         return 0.87 * fruit_size_cm2 + 1.2
 
     def get_ec_ph_status(self, data):
-        """تعیین وضعیت EC و pH"""
-        ec = data.get('ec', 1.8)
-        ph = data.get('ph', 6.0)
+        ec = self._safe_float(data, 'ec', 1.8)
+        ph = self._safe_float(data, 'ph', 6.0)
 
         opt = self.optimal_ec_ph
 
@@ -191,64 +163,57 @@ class PhysiologyEngine:
         }
 
     def generate_alerts(self, ppm, data, ratios):
-        """تولید هشدارها"""
         alerts = []
 
-        # هشدار نسبت‌ها
         for name, ratio in ratios.items():
             if name in self.optimal_ratios:
                 opt = self.optimal_ratios[name]
                 if ratio > opt['max']:
-                    alerts.append(f"⚠️ نسبت {name.replace('_', ':')} = {ratio:.2f} بالاست (بهینه: {opt['min']}-{opt['max']})")
+                    alerts.append(f"\u26a0\ufe0f نسبت {name.replace('_', ':')} = {ratio:.2f} بالاست (بهینه: {opt['min']}-{opt['max']})")
                 elif ratio < opt['min']:
-                    alerts.append(f"⚠️ نسبت {name.replace('_', ':')} = {ratio:.2f} پایین است (بهینه: {opt['min']}-{opt['max']})")
+                    alerts.append(f"\u26a0\ufe0f نسبت {name.replace('_', ':')} = {ratio:.2f} پایین است (بهینه: {opt['min']}-{opt['max']})")
 
-        # هشدار عناصر
         for element, value in ppm.items():
             if element in self.optimal_ranges:
                 opt = self.optimal_ranges[element]
                 if value < opt['min']:
-                    alerts.append(f"⚠️ {element} = {value:.2f} ppm پایین است (بهینه: {opt['min']}-{opt['max']})")
+                    alerts.append(f"\u26a0\ufe0f {element} = {value:.2f} ppm پایین است (بهینه: {opt['min']}-{opt['max']})")
                 elif value > opt['max']:
-                    alerts.append(f"⚠️ {element} = {value:.2f} ppm بالاست (بهینه: {opt['min']}-{opt['max']})")
+                    alerts.append(f"\u26a0\ufe0f {element} = {value:.2f} ppm بالاست (بهینه: {opt['min']}-{opt['max']})")
 
-        # هشدار دما
-        temp = data.get('temp_c', 25)
+        temp = self._safe_float(data, 'temp_c', 25)
         if temp > 30:
-            alerts.append("⚠️ دمای بالای ۳۰ درجه! خطر تنش گرمایی")
+            alerts.append("\u26a0\ufe0f دمای بالای ۳۰ درجه! خطر تنش گرمایی")
         elif temp < 15:
-            alerts.append("⚠️ دمای زیر ۱۵ درجه! رشد گیاه کند می‌شود")
+            alerts.append("\u26a0\ufe0f دمای زیر ۱۵ درجه! رشد گیاه کند می‌شود")
 
-        # هشدار تعداد میوه
-        if data.get('fruits_per_plant', 0) > 8:
-            alerts.append("⚠️ تعداد میوه زیاد است! نیاز به K و Ca افزایش یافته")
+        if self._safe_float(data, 'fruits_per_plant', 0) > 8:
+            alerts.append("\u26a0\ufe0f تعداد میوه زیاد است! نیاز به K و Ca افزایش یافته")
 
         return alerts
 
     def generate_recommendations(self, ppm, data, alerts):
-        """تولید توصیه‌های عملی"""
         recs = []
 
         for alert in alerts:
             if 'K:Ca' in alert:
-                recs.append("💡 یک بار محلول‌پاشی نیترات کلسیم (۰.۳٪) انجام دهید.")
+                recs.append("\ud83d\udca1 یک بار محلول‌پاشی نیترات کلسیم (۰.۳٪) انجام دهید.")
             elif 'K:Mg' in alert:
-                recs.append("💡 محلول‌پاشی سولفات منیزیم (۱٪) انجام دهید.")
+                recs.append("\ud83d\udca1 محلول‌پاشی سولفات منیزیم (۱٪) انجام دهید.")
             elif 'N:K' in alert:
-                recs.append("💡 نسبت N:K را با افزایش N یا کاهش K تنظیم کنید.")
+                recs.append("\ud83d\udca1 نسبت N:K را با افزایش N یا کاهش K تنظیم کنید.")
             elif 'دما' in alert:
-                recs.append("💡 آبیاری را ۱۰-۱۵٪ افزایش دهید.")
+                recs.append("\ud83d\udca1 آبیاری را ۱۰-۱۵٪ افزایش دهید.")
 
         if data.get('weather') == 'cloudy':
-            recs.append("💡 هوای ابری است. کوددهی N را ۱۵٪ کاهش دهید.")
+            recs.append("\ud83d\udca1 هوای ابری است. کوددهی N را ۱۵٪ کاهش دهید.")
 
         if not recs:
-            recs.append("✅ همه چیز در وضعیت مطلوب است. ادامه دهید.")
+            recs.append("\u2705 همه چیز در وضعیت مطلوب است. ادامه دهید.")
 
         return list(set(recs))
 
     def determine_health_status(self, alerts):
-        """تعیین وضعیت سلامت کلی"""
         if len(alerts) == 0:
             return 'Excellent'
         elif len(alerts) <= 2:

@@ -3,9 +3,6 @@ import { getToken } from './auth'
 
 const API_URL = 'http://127.0.0.1:5000'
 
-// ============================================================
-// API Client با احراز هویت خودکار
-// ============================================================
 const apiClient = axios.create({
     baseURL: API_URL,
     headers: {
@@ -13,16 +10,40 @@ const apiClient = axios.create({
     }
 })
 
-// اضافه کردن توکن به همه درخواست‌ها
+// ✅ Interceptor برای اضافه کردن توکن
 apiClient.interceptors.request.use(
     (config) => {
         const token = getToken()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
+            console.log('🔑 توکن به هدر اضافه شد')
+        } else {
+            console.warn('⚠️ توکن وجود ندارد!')
         }
         return config
     },
-    (error) => Promise.reject(error)
+    (error) => {
+        console.error('❌ خطا در interceptor:', error)
+        return Promise.reject(error)
+    }
+)
+
+// ✅ Interceptor برای مدیریت خطاها
+apiClient.interceptors.response.use(
+    (response) => {
+        console.log('✅ پاسخ دریافت شد:', response.status)
+        return response
+    },
+    (error) => {
+        if (error.response?.status === 401) {
+            console.error('❌ خطای 401: توکن نامعتبر یا منقضی')
+            // پاک کردن توکن و هدایت به صفحه ورود
+            localStorage.removeItem('auth_token')
+            localStorage.removeItem('auth_user')
+            window.location.reload()
+        }
+        return Promise.reject(error)
+    }
 )
 
 // ============================================================
@@ -45,13 +66,31 @@ export const getMe = async () => {
 }
 
 export const calculateNutrients = async (formData) => {
-    try {
-        const response = await apiClient.post('/calculate', formData)
-        return response.data
-    } catch (error) {
-        console.error('خطا در محاسبه:', error)
-        throw error
-    }
+    const response = await apiClient.post('/calculate', formData)
+    return response.data
+}
+
+export const saveCalculation = async (result, inputData) => {
+    const response = await apiClient.post('/calculations/save', {
+        result: result,
+        input_data: inputData
+    })
+    return response.data
+}
+
+export const getCalculations = async (limit = 10) => {
+    const response = await apiClient.get(`/calculations?limit=${limit}`)
+    return response.data
+}
+
+export const getCalculationStats = async () => {
+    const response = await apiClient.get('/calculations/stats')
+    return response.data
+}
+
+export const getCalculation = async (calcId) => {
+    const response = await apiClient.get(`/calculations/${calcId}`)
+    return response.data
 }
 
 export default apiClient

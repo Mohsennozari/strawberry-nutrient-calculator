@@ -9,17 +9,28 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from database import get_connection
 
+# ============================================================
+# تنظیمات احراز هویت
+# ============================================================
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 JWT_SECRET = os.environ.get('JWT_SECRET', 'dev-secret-change-me')
 JWT_ALGORITHM = 'HS256'
 TOKEN_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', 24))
 
+# ============================================================
+# اعتبارسنجی
+# ============================================================
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 USERNAME_RE = re.compile(r'^[A-Za-z0-9_]{3,32}$')
 
 
+# ============================================================
+# توابع کمکی
+# ============================================================
+
 def _generate_token(user_id):
+    """تولید توکن JWT برای کاربر"""
     payload = {
         'user_id': user_id,
         'exp': datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS),
@@ -29,6 +40,7 @@ def _generate_token(user_id):
 
 
 def _serialize_user(row):
+    """تبدیل ردیف کاربر به دیکشنری"""
     return {
         'id': row['id'],
         'username': row['username'],
@@ -37,7 +49,17 @@ def _serialize_user(row):
     }
 
 
+def get_current_user_id():
+    """دریافت ID کاربر فعلی از g"""
+    return g.current_user['id'] if hasattr(g, 'current_user') else None
+
+
+# ============================================================
+# دکوراتور احراز هویت
+# ============================================================
+
 def token_required(f):
+    """دکوراتور برای محافظت از مسیرها با توکن JWT"""
     @wraps(f)
     def decorated(*args, **kwargs):
         header = request.headers.get('Authorization', '')
@@ -45,6 +67,7 @@ def token_required(f):
             return jsonify({'error': 'توکن احراز هویت ارسال نشده است'}), 401
 
         token = header.split(' ', 1)[1].strip()
+
         try:
             payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         except jwt.ExpiredSignatureError:
@@ -69,8 +92,13 @@ def token_required(f):
     return decorated
 
 
+# ============================================================
+# مسیرهای احراز هویت
+# ============================================================
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """ثبت‌نام کاربر جدید"""
     data = request.get_json(silent=True) or {}
     username = (data.get('username') or '').strip()
     email = (data.get('email') or '').strip().lower()
@@ -109,6 +137,7 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    """ورود کاربر"""
     data = request.get_json(silent=True) or {}
     identifier = (data.get('username') or data.get('email') or '').strip()
     password = data.get('password') or ''
@@ -135,4 +164,5 @@ def login():
 @auth_bp.route('/me', methods=['GET'])
 @token_required
 def me():
+    """دریافت اطلاعات کاربر فعلی"""
     return jsonify({'user': _serialize_user(g.current_user)})

@@ -1,20 +1,22 @@
-// مدیریت احراز هویت
-
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
 
 export function getToken() {
-    return localStorage.getItem(TOKEN_KEY)
+    const token = localStorage.getItem(TOKEN_KEY)
+    console.log('📤 دریافت توکن:', token ? 'توکن موجود است' : 'توکن وجود ندارد')
+    return token
 }
 
 export function setAuth(token, user) {
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(USER_KEY, JSON.stringify(user))
+    console.log('✅ توکن و کاربر ذخیره شد')
 }
 
 export function clearAuth() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+    console.log('🗑️ توکن و کاربر پاک شد')
 }
 
 export function getUser() {
@@ -29,10 +31,4 @@ export function getUser() {
 
 export function isAuthenticated() {
     return !!getToken()
-}
-
-export function getAuthHeader() {
-    const token = getToken()
-    if (!token) return {}
-    return { Authorization: `Bearer ${token}` }
 }
